@@ -18,7 +18,6 @@
 package com.coveo.saml;
 
 import java.util.Objects;
-
 import org.apache.commons.lang3.StringUtils;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.saml2.core.LogoutRequest;
@@ -59,7 +58,7 @@ public class LogoutRequestSchemaValidator {
    * @throws SamlException thrown if the identifiers present are not valid
    */
   protected void validateIdentifiers(LogoutRequest request) throws SamlException {
-    int idCount = 0;
+    var idCount = 0;
 
     if (request.getBaseID() != null) {
       idCount++;

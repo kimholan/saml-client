@@ -3,9 +3,7 @@ package com.coveo.saml;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-
 import org.opensaml.saml.common.SignableSAMLObject;
-import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Conditions;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.LogoutResponse;
@@ -18,15 +16,13 @@ import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
 
-/**
- * The type Validator utils.
- */
+/** The type Validator utils. */
 class ValidatorUtils {
 
   /**
    * Validate response.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
    * @throws SamlException the saml exception
    */
@@ -49,7 +45,7 @@ class ValidatorUtils {
    */
   private static void validateStatus(StatusResponseType response) throws SamlException {
 
-    String statusCode = response.getStatus().getStatusCode().getValue();
+    var statusCode = response.getStatus().getStatusCode().getValue();
 
     if (!StatusCode.SUCCESS.equals(statusCode)) {
       throw new SamlException("Invalid status code: " + statusCode);
@@ -59,7 +55,7 @@ class ValidatorUtils {
   /**
    * Validate issuer.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
    * @throws SamlException the saml exception
    */
@@ -69,10 +65,11 @@ class ValidatorUtils {
       throw new SamlException("The response issuer didn't match the expected value");
     }
   }
+
   /**
    * Validate issuer.
    *
-   * @param request       the response
+   * @param request the response
    * @param requestIssuer the request issuer
    * @throws SamlException the saml exception
    */
@@ -82,13 +79,14 @@ class ValidatorUtils {
       throw new SamlException("The request issuer didn't match the expected value");
     }
   }
+
   /**
    * Validate assertion.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
-   * @param now            the current date time (for unit test only)
-   * @param notBeforeSkew  the notBeforeSkew
+   * @param now the current date time (for unit test only)
+   * @param notBeforeSkew the notBeforeSkew
    * @throws SamlException the saml exception
    */
   private static void validateAssertion(
@@ -98,7 +96,7 @@ class ValidatorUtils {
       throw new SamlException("The response doesn't contain exactly 1 assertion");
     }
 
-    Assertion assertion = response.getAssertions().get(0);
+    var assertion = response.getAssertions().get(0);
     if (!Objects.equals(assertion.getIssuer().getValue(), responseIssuer)) {
       throw new SamlException("The assertion issuer didn't match the expected value");
     }
@@ -115,21 +113,21 @@ class ValidatorUtils {
    * Enforce conditions.
    *
    * @param conditions the conditions
-   * @param _now            the current date time (for unit test only)
-   * @param notBeforeSkew  the notBeforeSkew
+   * @param _now the current date time (for unit test only)
+   * @param notBeforeSkew the notBeforeSkew
    * @throws SamlException the saml exception
    */
   private static void enforceConditions(Conditions conditions, Instant _now, long notBeforeSkew)
       throws SamlException {
-    Instant now = _now != null ? _now : Instant.now();
+    var now = _now != null ? _now : Instant.now();
 
-    Instant notBefore = conditions.getNotBefore();
-    Instant skewedNotBefore = notBefore.minusSeconds(notBeforeSkew);
+    var notBefore = conditions.getNotBefore();
+    var skewedNotBefore = notBefore.minusSeconds(notBeforeSkew);
     if (now.isBefore(skewedNotBefore)) {
       throw new SamlException("The assertion cannot be used before " + notBefore);
     }
 
-    Instant notOnOrAfter = conditions.getNotOnOrAfter();
+    var notOnOrAfter = conditions.getNotOnOrAfter();
     if (now.isAfter(notOnOrAfter)) {
       throw new SamlException("The assertion cannot be used after  " + notOnOrAfter);
     }
@@ -138,7 +136,7 @@ class ValidatorUtils {
   /**
    * Validate signature.
    *
-   * @param response    the response
+   * @param response the response
    * @param credentials the credentials
    * @throws SamlException the saml exception
    */
@@ -152,13 +150,13 @@ class ValidatorUtils {
   /**
    * Validate assertion signature.
    *
-   * @param response    the response
+   * @param response the response
    * @param credentials the credentials
    * @throws SamlException the saml exception
    */
   private static void validateAssertionSignature(Response response, List<Credential> credentials)
       throws SamlException {
-    Signature assertionSignature = response.getAssertions().get(0).getSignature();
+    var assertionSignature = response.getAssertions().get(0).getSignature();
 
     if (response.getSignature() == null && assertionSignature == null) {
       throw new SamlException("No signature is present in either response or assertion");
@@ -172,7 +170,7 @@ class ValidatorUtils {
   /**
    * Validate boolean.
    *
-   * @param signature   the signature
+   * @param signature the signature
    * @param credentials the credentials
    * @return the boolean
    */
@@ -182,8 +180,7 @@ class ValidatorUtils {
     }
 
     // It's fine if any of the credentials match the signature
-    return credentials
-        .stream()
+    return credentials.stream()
         .anyMatch(
             credential -> {
               try {
@@ -198,11 +195,11 @@ class ValidatorUtils {
   /**
    * Validate.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
-   * @param credentials    the credentials
-   * @param now            the current date time (for unit test only)
-   * @param notBeforeSkew  the notBeforeSkew
+   * @param credentials the credentials
+   * @param now the current date time (for unit test only)
+   * @param notBeforeSkew the notBeforeSkew
    * @throws SamlException the saml exception
    */
   public static void validate(
@@ -217,12 +214,13 @@ class ValidatorUtils {
     validateSignature(response, credentials);
     validateAssertionSignature(response, credentials);
   }
+
   /**
    * Validate.
    *
-   * @param logoutRequest       the response
+   * @param logoutRequest the response
    * @param responseIssuer the response issuer
-   * @param credentials    the credentials
+   * @param credentials the credentials
    * @throws SamlException the saml exception
    */
   public static void validate(
@@ -234,12 +232,13 @@ class ValidatorUtils {
     validateLogoutRequest(logoutRequest, responseIssuer, nameID);
     validateSignature(logoutRequest, credentials);
   }
+
   /**
    * Validate.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
-   * @param credentials    the credentials
+   * @param credentials the credentials
    * @throws SamlException the saml exception
    */
   public static void validate(
@@ -252,7 +251,7 @@ class ValidatorUtils {
   /**
    * Validate response.
    *
-   * @param response       the response
+   * @param response the response
    * @param responseIssuer the response issuer
    * @throws SamlException the saml exception
    */
@@ -266,10 +265,11 @@ class ValidatorUtils {
     validateIssuer(response, responseIssuer);
     validateStatus(response);
   }
+
   /**
    * Validate response.
    *
-   * @param request       the request
+   * @param request the request
    * @param requestIssuer the response issuer
    * @throws SamlException the saml exception
    */
@@ -288,7 +288,7 @@ class ValidatorUtils {
    * Validate the logout request name id.
    *
    * @param request the request
-   * @param nameID  the name id
+   * @param nameID the name id
    * @throws SamlException the saml exception
    */
   private static void validateNameId(LogoutRequest request, String nameID) throws SamlException {

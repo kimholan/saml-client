@@ -11,14 +11,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 import org.opensaml.saml.saml2.core.StatusCode;
@@ -81,9 +79,9 @@ public class SamlClientTest {
 
   @Test
   public void metadataXMLFromHubCanBeLoaded() throws Throwable {
-    CertificateFactory cf = CertificateFactory.getInstance("X.509");
-    Certificate crt = cf.generateCertificate(SamlClientTest.class.getResourceAsStream("hub.crt"));
-    ArrayList<X509Certificate> certificates = new ArrayList<>();
+    var cf = CertificateFactory.getInstance("X.509");
+    var crt = cf.generateCertificate(SamlClientTest.class.getResourceAsStream("hub.crt"));
+    var certificates = new ArrayList<X509Certificate>();
     certificates.add((X509Certificate) crt);
 
     SamlClient.fromMetadata(
@@ -108,27 +106,26 @@ public class SamlClientTest {
 
   @Test
   public void getSamlRequestReturnsAnEncodedRequest() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
-    String decoded =
-        new String(Base64.decodeBase64(client.getSamlRequest()), StandardCharsets.UTF_8);
+    var decoded = new String(Base64.decodeBase64(client.getSamlRequest()), StandardCharsets.UTF_8);
     assertTrue(decoded.contains(">myidentifier<"));
   }
 
   @Test
   public void decodeAndValidateSamlResponseCanDecodeAnSamlResponse() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
-    SamlResponse response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
+    var response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
     assertEquals("mlaporte@coveo.com", response.getNameID());
   }
 
   @Test(expected = SamlException.class)
   public void decodeAndValidateEnforceResponseOrAssertionSignature() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
@@ -137,7 +134,7 @@ public class SamlClientTest {
 
   @Test(expected = SamlException.class)
   public void decodeAndValidateWithAnInvalidResponseSignature() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
@@ -147,7 +144,7 @@ public class SamlClientTest {
 
   @Test(expected = SamlException.class)
   public void decodeAndValidateWithAnInvalidAssertionSignature() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
@@ -157,9 +154,9 @@ public class SamlClientTest {
 
   @Test(expected = SamlException.class)
   public void decodeAndValidateSamlResponseRejectsATamperedResponse() throws Throwable {
-    String decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
-    String tampered = decoded.replace("mlaporte", "evilperson");
-    SamlClient client =
+    var decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
+    var tampered = decoded.replace("mlaporte", "evilperson");
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
@@ -169,22 +166,22 @@ public class SamlClientTest {
 
   @Test
   public void decodeAndValidateSamlResponseWorksWithCertsInDifferentOrder() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs2.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
-    SamlResponse response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
+    var response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
     assertEquals("mlaporte@coveo.com", response.getNameID());
   }
 
   @Test
   public void decodeAndValidateSamlResponseWorksWithCertsNotIncludedInMetadata() throws Throwable {
-    CertificateFactory cf = CertificateFactory.getInstance("X.509");
-    Certificate crt = cf.generateCertificate(SamlClientTest.class.getResourceAsStream("hub.crt"));
-    ArrayList<X509Certificate> certificates = new ArrayList<>();
+    var cf = CertificateFactory.getInstance("X.509");
+    var crt = cf.generateCertificate(SamlClientTest.class.getResourceAsStream("hub.crt"));
+    var certificates = new ArrayList<X509Certificate>();
     certificates.add((X509Certificate) crt);
 
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier",
             "http://some/url",
@@ -192,33 +189,32 @@ public class SamlClientTest {
             SamlClient.SamlIdpBinding.POST,
             certificates);
     client.setInstantNow(ASSERTION_DATE_HUB);
-    SamlResponse response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE_HUB, "POST");
+    var response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE_HUB, "POST");
     assertEquals("test@test.tld", response.getNameID());
   }
 
   @Test
   public void decodeAndValidateSamlResponseWithHttpRedirect() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier",
             "http://some/url",
             getXml("adfs.xml"),
             SamlClient.SamlIdpBinding.Redirect);
-    String decoded =
-        new String(Base64.decodeBase64(client.getSamlRequest()), StandardCharsets.UTF_8);
+    var decoded = new String(Base64.decodeBase64(client.getSamlRequest()), StandardCharsets.UTF_8);
     assertTrue(decoded.contains(">myidentifier<"));
   }
 
   // Test for https://www.kb.cert.org/vuls/id/475445
   @Test
   public void itIsNotVulnerableToCommentAttackFromOpenSAML() throws Throwable {
-    String decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
-    String tampered = decoded.replace("mlaporte", "m<!---->laporte");
-    SamlClient client =
+    var decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
+    var tampered = decoded.replace("mlaporte", "m<!---->laporte");
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
-    SamlResponse response =
+    var response =
         client.decodeAndValidateSamlResponse(
             Base64.encodeBase64String(tampered.getBytes(StandardCharsets.UTF_8)), "POST");
 
@@ -229,33 +225,33 @@ public class SamlClientTest {
 
   @Test
   public void decodeAndValidateSamlResponseWorksWithNowAfterSkewedNotBefore() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
-    int skew = 60 * 60 * 1000;
+    var skew = 60 * 60 * 1000;
     client.setInstantNow(ASSERTION_DATE.minusSeconds(skew));
     client.setNotBeforeSkew(skew);
-    SamlResponse response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
+    var response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
     assertEquals("mlaporte@coveo.com", response.getNameID());
   }
 
   @Test(expected = SamlException.class)
   public void decodeAndValidateSamlResponseRejectsNowBeforeNotBefore() throws Throwable {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
-    int skew = 60 * 60 * 1000;
+    var skew = 60 * 60 * 1000;
     client.setInstantNow(ASSERTION_DATE.minusSeconds(skew));
-    SamlResponse response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
+    var response = client.decodeAndValidateSamlResponse(AN_ENCODED_RESPONSE, "POST");
     assertEquals("mlaporte@coveo.com", response.getNameID());
   }
 
   @Test
   public void decodeAndValidateSamlResponseWithEncryptedSignedAssertion() throws Throwable {
-    SamlClient client = getKeyCloakClient(true);
+    var client = getKeyCloakClient(true);
     client.setInstantNow(ASSERTION_DATE);
 
-    SamlResponse response =
+    var response =
         client.decodeAndValidateSamlResponse(
             AN_ENCODED_RESPONSE_WITH_SIGNED_AND_ENCRYPTED_ASSERTION, "POST");
     assertEquals("mlaporte@coveo.com", response.getNameID());
@@ -264,7 +260,7 @@ public class SamlClientTest {
   @Test
   public void decodeAndValidateSamlResponseWithEncryptedSignedAssertionWithAlternateKeys()
       throws Throwable {
-    SamlClient client = getKeyCloakClient(false);
+    var client = getKeyCloakClient(false);
     client.setInstantNow(ASSERTION_DATE);
 
     client.setSPKeys(
@@ -275,19 +271,20 @@ public class SamlClientTest {
         this.getClass().getResource("saml-public-key.crt").getFile(),
         this.getClass().getResource("saml-private-key.pk8").getFile());
 
-    SamlResponse response =
+    var response =
         client.decodeAndValidateSamlResponse(
             AN_ENCODED_RESPONSE_WITH_SIGNED_AND_ENCRYPTED_ASSERTION, "POST");
 
     assertEquals("mlaporte@coveo.com", response.getNameID());
   }
 
-  // Test for https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html
+  // Test for
+  // https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html
   @Test
   public void itIsNotVulnerableToXXEAttacks() throws Throwable {
-    String decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
-    String withDtd = "<!DOCTYPE note SYSTEM \"Note.dtd\">" + decoded;
-    SamlClient client =
+    var decoded = new String(Base64.decodeBase64(AN_ENCODED_RESPONSE), StandardCharsets.UTF_8);
+    var withDtd = "<!DOCTYPE note SYSTEM \"Note.dtd\">" + decoded;
+    var client =
         SamlClient.fromMetadata(
             "myidentifier", "http://some/url", getXml("adfs.xml"), SamlClient.SamlIdpBinding.POST);
     client.setInstantNow(ASSERTION_DATE);
@@ -299,6 +296,7 @@ public class SamlClientTest {
       assertTrue(ex.getCause().getCause().toString().contains("DOCTYPE is disallowed"));
     }
   }
+
   /**
    * Decode and validate saml logout invalid response.
    *
@@ -306,12 +304,11 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutInvalidResponse() throws Throwable {
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(false);
-    //Retrieve the new encoded logout response with error status
-    String encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.NO_AVAILABLE_IDP);
-    SamlLogoutResponse logoutResponse =
-        decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
+    // Retrieve the saml client
+    var client = getKeyCloakClient(false);
+    // Retrieve the new encoded logout response with error status
+    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.NO_AVAILABLE_IDP);
+    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
     assertTrue(logoutResponse.isNotValid());
   }
 
@@ -322,12 +319,12 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutResponseWithInvalidSignature() throws Throwable {
-    SamlClient client = getKeyCloakClient(true);
-    String encodedSamlLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    //Corrupt the signature  (decode => corrupt => encode)
-    String decodedSamlLogoutResponse = decode(encodedSamlLogoutResponse);
-    int index = decodedSamlLogoutResponse.indexOf("<ds:SignatureValue>") + 19;
-    String s = decodedSamlLogoutResponse.substring(index);
+    var client = getKeyCloakClient(true);
+    var encodedSamlLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
+    // Corrupt the signature  (decode => corrupt => encode)
+    var decodedSamlLogoutResponse = decode(encodedSamlLogoutResponse);
+    var index = decodedSamlLogoutResponse.indexOf("<ds:SignatureValue>") + 19;
+    var s = decodedSamlLogoutResponse.substring(index);
     decodedSamlLogoutResponse = encode(decodedSamlLogoutResponse.subSequence(0, index) + "XXX" + s);
 
     try {
@@ -347,16 +344,15 @@ public class SamlClientTest {
     /*
      * To avoid annoying code test, the IDP and the SP have the same public key
      */
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(true);
-    //Retrieve the new encoded logout response
-    String encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    //Decode the encoded logout response to check it is signed
-    String decodedResponse = decode(encodedLogoutResponse);
+    // Retrieve the saml client
+    var client = getKeyCloakClient(true);
+    // Retrieve the new encoded logout response
+    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
+    // Decode the encoded logout response to check it is signed
+    var decodedResponse = decode(encodedLogoutResponse);
     assertTrue(decodedResponse.contains(Signature.DEFAULT_ELEMENT_LOCAL_NAME));
-    //Decode and valid the logout response
-    SamlLogoutResponse logoutResponse =
-        decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
+    // Decode and valid the logout response
+    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
     assertTrue(logoutResponse.isValid());
   }
 
@@ -367,11 +363,11 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutRequest() throws Throwable {
-    String nameId = "gdeclerck";
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(false);
-    //Create a logout request
-    String encodedLogoutRequest = client.getLogoutRequest(nameId);
+    var nameId = "gdeclerck";
+    // Retrieve the saml client
+    var client = getKeyCloakClient(false);
+    // Create a logout request
+    var encodedLogoutRequest = client.getLogoutRequest(nameId);
     client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
   }
 
@@ -382,11 +378,11 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutRequestInvalidNameID() throws Throwable {
-    String nameId = "gdeclerck";
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(false);
-    //Create a logout request
-    String encodedLogoutRequest = client.getLogoutRequest(nameId);
+    var nameId = "gdeclerck";
+    // Retrieve the saml client
+    var client = getKeyCloakClient(false);
+    // Create a logout request
+    var encodedLogoutRequest = client.getLogoutRequest(nameId);
     try {
       client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId + "XX", "POST");
       fail("We should have an saml exception for invalid nameID");
@@ -401,13 +397,13 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutRequestWithInvalidSignature() throws Throwable {
-    String nameId = "gdeclerck";
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(true);
+    var nameId = "gdeclerck";
+    // Retrieve the saml client
+    var client = getKeyCloakClient(true);
 
-    //Create a logout request
-    String encodedLogoutRequest = client.getLogoutRequest(nameId);
-    //Invalid the signature
+    // Create a logout request
+    var encodedLogoutRequest = client.getLogoutRequest(nameId);
+    // Invalid the signature
     encodedLogoutRequest = getCorruptedSignature(encodedLogoutRequest);
     try {
       client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
@@ -423,13 +419,14 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutRequestWithValidSignature() throws Throwable {
-    String nameId = "gdeclerck";
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(true);
-    //Create a logout request
-    String encodedLogoutRequest = client.getLogoutRequest(nameId);
+    var nameId = "gdeclerck";
+    // Retrieve the saml client
+    var client = getKeyCloakClient(true);
+    // Create a logout request
+    var encodedLogoutRequest = client.getLogoutRequest(nameId);
     client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
   }
+
   /**
    * Decode and validate saml logout valid response.
    *
@@ -437,18 +434,17 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutValidResponse() throws Throwable {
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(false);
-    //Retrieve the new encoded logout response with valid status
-    String encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    SamlLogoutResponse logoutResponse =
-        decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
+    // Retrieve the saml client
+    var client = getKeyCloakClient(false);
+    // Retrieve the new encoded logout response with valid status
+    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
+    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
     assertTrue(logoutResponse.isValid());
   }
 
   @Test
   public void decodeAndValidateDeflatedSamlLogoutValidResponse() throws Throwable {
-    SamlLogoutResponse logoutResponse =
+    var logoutResponse =
         decodeAndValidateSamlLogoutResponse(A_DEFLATED_AND_ENCODED_LOGOUT_RESPONSE, "GET");
     assertTrue(logoutResponse.isValid());
   }
@@ -460,12 +456,11 @@ public class SamlClientTest {
    */
   @Test
   public void decodeAndValidateSamlLogoutValidResponseWithSignature() throws Throwable {
-    //Retrieve the saml client
-    SamlClient client = getKeyCloakClient(true);
-    //Retrieve the new encoded logout response with valid status
-    String encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    SamlLogoutResponse logoutResponse =
-        decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
+    // Retrieve the saml client
+    var client = getKeyCloakClient(true);
+    // Retrieve the new encoded logout response with valid status
+    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
+    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
     assertTrue(logoutResponse.isValid());
   }
 
@@ -476,9 +471,9 @@ public class SamlClientTest {
    */
   @Test
   public void getSamlLogoutRequestReturnsAnEncodedRequest() throws Throwable {
-    SamlClient client = getKeyCloakClient(false);
+    var client = getKeyCloakClient(false);
 
-    String decoded =
+    var decoded =
         new String(
             Base64.decodeBase64(client.getLogoutRequest("mlaporte@coveo.com")),
             StandardCharsets.UTF_8);
@@ -492,9 +487,9 @@ public class SamlClientTest {
    */
   @Test
   public void getSamlLogoutResponseReturnsAnEncodedResponse() throws Throwable {
-    SamlClient client = getKeyCloakClient(false);
+    var client = getKeyCloakClient(false);
 
-    String decoded =
+    var decoded =
         new String(
             Base64.decodeBase64(client.getSamlLogoutResponse(StatusCode.SUCCESS, null)),
             StandardCharsets.UTF_8);
@@ -504,7 +499,7 @@ public class SamlClientTest {
 
   @Test
   public void getSamlClientFromMetadataSuccess() {
-    String testMetadata =
+    var testMetadata =
         "<?xml version=\"1.0\"?>\r\n"
             + "<md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" entityID=\"http://localhost:8666/simplesaml/saml2/idp/metadata.php\">\r\n"
             + "  <md:IDPSSODescriptor protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\r\n"
@@ -538,7 +533,7 @@ public class SamlClientTest {
 
   private SamlClient getKeyCloakClient(boolean signingNewDocument)
       throws IOException, SamlException {
-    SamlClient client =
+    var client =
         SamlClient.fromMetadata(
             "myidentifier",
             "http://some/url",
@@ -553,9 +548,9 @@ public class SamlClientTest {
   }
 
   private String getCorruptedSignature(String encoded) {
-    String decodedSamlLogoutResponse = decode(encoded);
-    int index = decodedSamlLogoutResponse.indexOf("<ds:SignatureValue>") + 19;
-    String s = decodedSamlLogoutResponse.substring(index);
+    var decodedSamlLogoutResponse = decode(encoded);
+    var index = decodedSamlLogoutResponse.indexOf("<ds:SignatureValue>") + 19;
+    var s = decodedSamlLogoutResponse.substring(index);
     return encode(decodedSamlLogoutResponse.subSequence(0, index) + "XXX" + s);
   }
 
@@ -569,9 +564,8 @@ public class SamlClientTest {
 
   private SamlLogoutResponse decodeAndValidateSamlLogoutResponse(
       String encodedResponse, String method) throws IOException, SamlException {
-    SamlClient client = getKeyCloakClient(false);
-    SamlLogoutResponse logoutResponse =
-        client.decodeAndValidateSamlLogoutResponse(encodedResponse, method);
+    var client = getKeyCloakClient(false);
+    var logoutResponse = client.decodeAndValidateSamlLogoutResponse(encodedResponse, method);
     assertNotNull(logoutResponse);
     return logoutResponse;
   }

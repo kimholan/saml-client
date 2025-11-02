@@ -2,12 +2,8 @@ package com.coveo.saml;
 
 import org.opensaml.saml.saml2.core.Status;
 import org.opensaml.saml.saml2.core.StatusCode;
-import org.opensaml.saml.saml2.core.StatusDetail;
-import org.opensaml.saml.saml2.core.StatusMessage;
 
-/**
- * The type Saml logout response.
- */
+/** The type Saml logout response. */
 public class SamlLogoutResponse {
   private Status status;
 
@@ -53,7 +49,7 @@ public class SamlLogoutResponse {
    * @return the message
    */
   public String getMessage() {
-    StatusMessage statusMessage = status.getStatusMessage();
+    var statusMessage = status.getStatusMessage();
     return statusMessage == null ? "none" : statusMessage.getValue();
   }
 
@@ -63,7 +59,7 @@ public class SamlLogoutResponse {
    * @return the details
    */
   public String getDetails() {
-    StatusDetail statusDetail = this.status.getStatusDetail();
+    var statusDetail = this.status.getStatusDetail();
     return statusDetail == null ? "none" : statusDetail.toString();
   }
 }

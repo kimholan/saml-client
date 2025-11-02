@@ -17,26 +17,22 @@
 
 package com.coveo.saml;
 
+import java.io.Writer;
+import java.util.Map;
+import net.shibboleth.shared.component.ComponentInitializationException;
+import net.shibboleth.shared.xml.impl.BasicParserPool;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.w3c.dom.ls.LSSerializerFilter;
 
-import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
-import net.shibboleth.utilities.java.support.xml.BasicParserPool;
-
-import java.io.Writer;
-
-import java.util.Map;
-
 public class XMLHelper {
   /**
-   * Writes a Node out to a Writer using the DOM, level 3, Load/Save serializer. The written content is encoded using
-   * the encoding specified in the writer configuration.
+   * Writes a Node out to a Writer using the DOM, level 3, Load/Save serializer. The written content
+   * is encoded using the encoding specified in the writer configuration.
    *
    * @param node the node to write out
    * @param output the writer to write the XML to
@@ -46,44 +42,41 @@ public class XMLHelper {
   }
 
   /**
-   * Writes a Node out to a Writer using the DOM, level 3, Load/Save serializer. The written content is encoded using
-   * the encoding specified in the writer configuration.
+   * Writes a Node out to a Writer using the DOM, level 3, Load/Save serializer. The written content
+   * is encoded using the encoding specified in the writer configuration.
    *
    * @param node the node to write out
    * @param output the writer to write the XML to
    * @param serializerParams parameters to pass to the {@link DOMConfiguration} of the serializer
-   *         instance, obtained via {@link LSSerializer#getDomConfig()}. May be null.
+   *     instance, obtained via {@link LSSerializer#getDomConfig()}. May be null.
    */
   public static void writeNode(Node node, Writer output, Map<String, Object> serializerParams) {
-    DOMImplementationLS domImplLS = getLSDOMImpl(node);
+    var domImplLS = getLSDOMImpl(node);
 
-    LSSerializer serializer = getLSSerializer(domImplLS, serializerParams);
+    var serializer = getLSSerializer(domImplLS, serializerParams);
 
-    LSOutput serializerOut = domImplLS.createLSOutput();
+    var serializerOut = domImplLS.createLSOutput();
     serializerOut.setCharacterStream(output);
 
     serializer.write(node, serializerOut);
   }
 
   /**
-   * Obtain a the DOM, level 3, Load/Save serializer {@link LSSerializer} instance from the
-   * given {@link DOMImplementationLS} instance.
+   * Obtain a the DOM, level 3, Load/Save serializer {@link LSSerializer} instance from the given
+   * {@link DOMImplementationLS} instance.
    *
-   * <p>
-   * The serializer instance will be configured with the parameters passed as the <code>serializerParams</code>
-   * argument. It will also be configured with an {@link LSSerializerFilter} that shows all nodes to the filter,
-   * and accepts all nodes shown.
-   * </p>
+   * <p>The serializer instance will be configured with the parameters passed as the <code>
+   * serializerParams</code> argument. It will also be configured with an {@link LSSerializerFilter}
+   * that shows all nodes to the filter, and accepts all nodes shown.
    *
    * @param domImplLS the DOM Level 3 Load/Save implementation to use
    * @param serializerParams parameters to pass to the {@link DOMConfiguration} of the serializer
-   *         instance, obtained via {@link LSSerializer#getDomConfig()}. May be null.
-   *
+   *     instance, obtained via {@link LSSerializer#getDomConfig()}. May be null.
    * @return a new LSSerializer instance
    */
   public static LSSerializer getLSSerializer(
       DOMImplementationLS domImplLS, Map<String, Object> serializerParams) {
-    LSSerializer serializer = domImplLS.createLSSerializer();
+    var serializer = domImplLS.createLSSerializer();
 
     serializer.setFilter(
         new LSSerializerFilter() {
@@ -100,8 +93,8 @@ public class XMLHelper {
         });
 
     if (serializerParams != null) {
-      DOMConfiguration serializerDOMConfig = serializer.getDomConfig();
-      for (String key : serializerParams.keySet()) {
+      var serializerDOMConfig = serializer.getDomConfig();
+      for (var key : serializerParams.keySet()) {
         serializerDOMConfig.setParameter(key, serializerParams.get(key));
       }
     }
@@ -123,7 +116,7 @@ public class XMLHelper {
       domImpl = node.getOwnerDocument().getImplementation();
     }
 
-    DOMImplementationLS domImplLS = (DOMImplementationLS) domImpl.getFeature("LS", "3.0");
+    var domImplLS = (DOMImplementationLS) domImpl.getFeature("LS", "3.0");
     return domImplLS;
   }
 
@@ -131,11 +124,10 @@ public class XMLHelper {
    * Creates a DOM parser
    *
    * @return BasicParserPool
-   *
    * @throws SamlException
    */
   public static BasicParserPool createDOMParser() throws SamlException {
-    BasicParserPool basicParserPool = new BasicParserPool();
+    var basicParserPool = new BasicParserPool();
     try {
       basicParserPool.initialize();
     } catch (ComponentInitializationException e) {

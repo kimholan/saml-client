@@ -1,15 +1,15 @@
 package com.coveo.saml;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.text.StringEscapeUtils;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class BrowserUtils {
   /**
    * Renders an HTTP response that will cause the browser to POST the specified values to an url.
+   *
    * @param url the url where to perform the POST.
    * @param response the {@link HttpServletResponse}.
    * @param values the values to include in the POST.
@@ -34,9 +34,9 @@ public class BrowserUtils {
             + StringEscapeUtils.escapeHtml4(url)
             + "' method='POST'>");
 
-    for (String key : values.keySet()) {
-      String encodedKey = StringEscapeUtils.escapeHtml4(key);
-      String encodedValue = StringEscapeUtils.escapeHtml4(values.get(key));
+    for (var key : values.keySet()) {
+      var encodedKey = StringEscapeUtils.escapeHtml4(key);
+      var encodedValue = StringEscapeUtils.escapeHtml4(values.get(key));
       writer.write(
           "<input type='hidden' id='"
               + encodedKey

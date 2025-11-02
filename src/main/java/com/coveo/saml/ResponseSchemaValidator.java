@@ -18,7 +18,6 @@
 package com.coveo.saml;
 
 import java.util.Objects;
-
 import org.apache.commons.lang3.StringUtils;
 import org.opensaml.saml.common.SAMLVersion;
 import org.opensaml.saml.saml2.core.StatusResponseType;
