@@ -50,15 +50,9 @@ import org.opensaml.saml.common.SignableSAMLObject;
 import org.opensaml.saml.metadata.resolver.impl.DOMMetadataResolver;
 import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.Issuer;
-import org.opensaml.saml.saml2.core.LogoutRequest;
-import org.opensaml.saml.saml2.core.LogoutResponse;
-import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.NameIDPolicy;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.Response;
-import org.opensaml.saml.saml2.core.Status;
-import org.opensaml.saml.saml2.core.impl.StatusCodeBuilder;
-import org.opensaml.saml.saml2.core.impl.StatusMessageBuilder;
 import org.opensaml.saml.saml2.encryption.Decrypter;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
@@ -570,38 +564,6 @@ public class SamlClient {
   }
 
   /**
-   * Decodes and validates an SAML response returned by an identity provider.
-   *
-   * @param encodedResponse the encoded response returned by the identity provider.
-   * @param method The HTTP method used by the request
-   * @return An {@link SamlResponse} object containing information decoded from the SAML response.
-   * @throws SamlException if the signature is invalid, or if any other error occurs.
-   */
-  public SamlLogoutResponse decodeAndValidateSamlLogoutResponse(
-      String encodedResponse, String method) throws SamlException {
-    var logoutResponse = (LogoutResponse) parseResponse(encodedResponse, method);
-
-    ValidatorUtils.validate(logoutResponse, responseIssuer, credentials);
-
-    return new SamlLogoutResponse(logoutResponse.getStatus());
-  }
-
-  /**
-   * Decodes and validates an SAML logout request send by an identity provider.
-   *
-   * @param encodedRequest the encoded request send by the identity provider.
-   * @param nameID The user to logout
-   * @param method The HTTP method used by the request
-   * @throws SamlException if the signature is invalid, or if any other error occurs.
-   */
-  public void decodeAndValidateSamlLogoutRequest(
-      String encodedRequest, String nameID, String method) throws SamlException {
-    var logoutRequest = (LogoutRequest) parseResponse(encodedRequest, method);
-
-    ValidatorUtils.validate(logoutRequest, responseIssuer, credentials, nameID);
-  }
-
-  /**
    * Set service provider keys.
    *
    * @param publicKey the public key
@@ -757,146 +719,6 @@ public class SamlClient {
     signSAMLObject(request);
 
     return marshallAndEncodeSamlObject(request);
-  }
-
-  /**
-   * Gets the encoded logout request.
-   *
-   * @param nameId the name id
-   * @return the logout request
-   * @throws SamlException the saml exception
-   */
-  public String getLogoutRequest(String nameId) throws SamlException {
-    var request = (LogoutRequest) getBasicSamlRequest(LogoutRequest.DEFAULT_ELEMENT_NAME);
-
-    var nid = (NameID) buildSamlObject(NameID.DEFAULT_ELEMENT_NAME);
-    nid.setValue(nameId);
-    request.setNameID(nid);
-
-    signSAMLObject(request);
-
-    return marshallAndEncodeSamlObject(request);
-  }
-
-  /**
-   * Gets saml logout response.
-   *
-   * @param status the status code @See StatusCode.java
-   * @return saml logout response
-   * @throws SamlException the saml exception
-   */
-  public String getSamlLogoutResponse(final String status) throws SamlException {
-    return getSamlLogoutResponse(status, null);
-  }
-
-  /**
-   * Gets saml logout response.
-   *
-   * @param status the status code @See StatusCode.java
-   * @param statMsg the status message
-   * @return saml logout response
-   * @throws SamlException the saml exception
-   */
-  public String getSamlLogoutResponse(final String status, final String statMsg)
-      throws SamlException {
-    var response = (LogoutResponse) buildSamlObject(LogoutResponse.DEFAULT_ELEMENT_NAME);
-    response.setID("z" + UUID.randomUUID()); // ADFS needs IDs to start with a letter
-
-    response.setVersion(SAMLVersion.VERSION_20);
-    response.setIssueInstant(Instant.now());
-
-    var issuer = (Issuer) buildSamlObject(Issuer.DEFAULT_ELEMENT_NAME);
-    issuer.setValue(relyingPartyIdentifier);
-    response.setIssuer(issuer);
-
-    // Status
-    var stat = (Status) buildSamlObject(Status.DEFAULT_ELEMENT_NAME);
-    var statCode = new StatusCodeBuilder().buildObject();
-    statCode.setValue(status);
-    stat.setStatusCode(statCode);
-    if (statMsg != null) {
-      var statMessage = new StatusMessageBuilder().buildObject();
-      statMessage.setValue(statMsg);
-      stat.setStatusMessage(statMessage);
-    }
-    response.setStatus(stat);
-    // Add a signature into the response
-    signSAMLObject(response);
-
-    StringWriter stringWriter;
-    try {
-      stringWriter = marshallXmlObject(response);
-    } catch (MarshallingException ex) {
-      throw new SamlException("Error while marshalling SAML request to XML", ex);
-    }
-
-    logger.trace("Issuing SAML Logout request: " + stringWriter);
-
-    return Base64.encodeBase64String(stringWriter.toString().getBytes(StandardCharsets.UTF_8));
-  }
-
-  /**
-   * Processes a POST containing the SAML logout request.
-   *
-   * @param request the {@link HttpServletRequest}.
-   * @param nameID the user to log out.
-   * @throws SamlException thrown is an unexpected error occurs.
-   */
-  public void processLogoutRequestPostFromIdentityProvider(
-      HttpServletRequest request, String nameID) throws SamlException {
-    var encodedResponse = request.getParameter(HTTP_REQ_SAML_PARAM);
-    decodeAndValidateSamlLogoutRequest(encodedResponse, nameID, request.getMethod());
-  }
-
-  /**
-   * Processes a POST containing the SAML response.
-   *
-   * @param request the {@link HttpServletRequest}.
-   * @return An {@link SamlResponse} object containing information decoded from the SAML response.
-   * @throws SamlException thrown is an unexpected error occurs.
-   */
-  public SamlLogoutResponse processPostLogoutResponseFromIdentityProvider(
-      HttpServletRequest request) throws SamlException {
-    var encodedResponse = request.getParameter(HTTP_RESP_SAML_PARAM);
-    return decodeAndValidateSamlLogoutResponse(encodedResponse, request.getMethod());
-  }
-
-  /**
-   * Redirects an {@link HttpServletResponse} to the configured identity provider.
-   *
-   * @param response The {@link HttpServletResponse}.
-   * @param relayState Optional relay state that will be passed along.
-   * @param nameId the user to log out.
-   * @throws IOException thrown if an IO error occurs.
-   * @throws SamlException thrown is an unexpected error occurs.
-   */
-  public void redirectToIdentityProvider(
-      HttpServletResponse response, String relayState, String nameId)
-      throws IOException, SamlException {
-    Map<String, String> values = new HashMap<>();
-    values.put("SAMLRequest", getLogoutRequest(nameId));
-    if (relayState != null) {
-      values.put("RelayState", relayState);
-    }
-
-    BrowserUtils.postUsingBrowser(identityProviderUrl, response, values);
-  }
-
-  /**
-   * Redirect to identity provider logout.
-   *
-   * @param response the response
-   * @param statusCode the status code
-   * @param statMsg the stat msg
-   * @throws IOException the io exception
-   * @throws SamlException the saml exception
-   */
-  public void redirectToIdentityProviderLogout(
-      HttpServletResponse response, String statusCode, String statMsg)
-      throws IOException, SamlException {
-    Map<String, String> values = new HashMap<>();
-    values.put(HTTP_RESP_SAML_PARAM, getSamlLogoutResponse(statusCode, statMsg));
-    BrowserUtils.postUsingBrowser(identityProviderUrl, response, values);
   }
 
   private static XMLObject buildSamlObject(QName qname) {

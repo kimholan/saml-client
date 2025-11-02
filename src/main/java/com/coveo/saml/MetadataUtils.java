@@ -18,7 +18,6 @@ import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml.saml2.metadata.KeyDescriptor;
 import org.opensaml.saml.saml2.metadata.NameIDFormat;
 import org.opensaml.saml.saml2.metadata.SPSSODescriptor;
-import org.opensaml.saml.saml2.metadata.SingleLogoutService;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.credential.UsageType;
 import org.opensaml.security.x509.BasicX509Credential;
@@ -30,16 +29,12 @@ public class MetadataUtils {
 
   private static final Logger logger = LoggerFactory.getLogger(SamlClient.class);
 
-  public static String generateSpMetadata(
-      String entityId, String assertionConsumerServiceURL, String logoutServiceURL) {
-    return generateSpMetadata(entityId, assertionConsumerServiceURL, logoutServiceURL, null);
+  public static String generateSpMetadata(String entityId, String assertionConsumerServiceURL) {
+    return generateSpMetadata(entityId, assertionConsumerServiceURL, null);
   }
 
   public static String generateSpMetadata(
-      String entityId,
-      String assertionConsumerServiceURL,
-      String singleLogoutServiceURL,
-      X509Certificate certificate) {
+      String entityId, String assertionConsumerServiceURL, X509Certificate certificate) {
     try {
       InitializationService.initialize();
 
@@ -95,14 +90,6 @@ public class MetadataUtils {
         }
         spSSODescriptor.getKeyDescriptors().add(signKeyDescriptor);
       }
-
-      var singleLogoutService = createSAMLObject(SingleLogoutService.class);
-      if (singleLogoutService == null) {
-        return null;
-      }
-      singleLogoutService.setBinding(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
-      singleLogoutService.setLocation(singleLogoutServiceURL);
-      spSSODescriptor.getSingleLogoutServices().add(singleLogoutService);
 
       var nameIDFormat = createSAMLObject(NameIDFormat.class);
       if (nameIDFormat == null) {

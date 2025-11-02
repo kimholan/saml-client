@@ -1,7 +1,6 @@
 package com.coveo.saml;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -19,8 +18,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
-import org.opensaml.saml.saml2.core.StatusCode;
-import org.opensaml.xmlsec.signature.Signature;
 
 public class SamlClientTest {
   private static final Instant ASSERTION_DATE =
@@ -297,206 +294,6 @@ public class SamlClientTest {
     }
   }
 
-  /**
-   * Decode and validate saml logout invalid response.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutInvalidResponse() throws Throwable {
-    // Retrieve the saml client
-    var client = getKeyCloakClient(false);
-    // Retrieve the new encoded logout response with error status
-    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.NO_AVAILABLE_IDP);
-    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
-    assertTrue(logoutResponse.isNotValid());
-  }
-
-  /**
-   * Decode and validate saml logout response with invalid signature.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutResponseWithInvalidSignature() throws Throwable {
-    var client = getKeyCloakClient(true);
-    var encodedSamlLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    // Corrupt the signature  (decode => corrupt => encode)
-    var decodedSamlLogoutResponse = decode(encodedSamlLogoutResponse);
-    var index = decodedSamlLogoutResponse.indexOf("<ds:SignatureValue>") + 19;
-    var s = decodedSamlLogoutResponse.substring(index);
-    decodedSamlLogoutResponse = encode(decodedSamlLogoutResponse.subSequence(0, index) + "XXX" + s);
-
-    try {
-      decodeAndValidateSamlLogoutResponse(decodedSamlLogoutResponse, "POST");
-      fail("We must have an exception if the signature isn't valid");
-    } catch (SamlException ignore) {
-    }
-  }
-
-  /**
-   * Decode and validate saml logout response with valid signature.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutResponseWithValidSignature() throws Throwable {
-    /*
-     * To avoid annoying code test, the IDP and the SP have the same public key
-     */
-    // Retrieve the saml client
-    var client = getKeyCloakClient(true);
-    // Retrieve the new encoded logout response
-    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    // Decode the encoded logout response to check it is signed
-    var decodedResponse = decode(encodedLogoutResponse);
-    assertTrue(decodedResponse.contains(Signature.DEFAULT_ELEMENT_LOCAL_NAME));
-    // Decode and valid the logout response
-    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
-    assertTrue(logoutResponse.isValid());
-  }
-
-  /**
-   * Decode and validate saml logout request.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutRequest() throws Throwable {
-    var nameId = "gdeclerck";
-    // Retrieve the saml client
-    var client = getKeyCloakClient(false);
-    // Create a logout request
-    var encodedLogoutRequest = client.getLogoutRequest(nameId);
-    client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
-  }
-
-  /**
-   * Decode and validate saml logout request invalid name id.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutRequestInvalidNameID() throws Throwable {
-    var nameId = "gdeclerck";
-    // Retrieve the saml client
-    var client = getKeyCloakClient(false);
-    // Create a logout request
-    var encodedLogoutRequest = client.getLogoutRequest(nameId);
-    try {
-      client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId + "XX", "POST");
-      fail("We should have an saml exception for invalid nameID");
-    } catch (SamlException ignore) {
-    }
-  }
-
-  /**
-   * Decode and validate saml logout request with invalid signature.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutRequestWithInvalidSignature() throws Throwable {
-    var nameId = "gdeclerck";
-    // Retrieve the saml client
-    var client = getKeyCloakClient(true);
-
-    // Create a logout request
-    var encodedLogoutRequest = client.getLogoutRequest(nameId);
-    // Invalid the signature
-    encodedLogoutRequest = getCorruptedSignature(encodedLogoutRequest);
-    try {
-      client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
-      fail("We must have an exception if the signature isn't valid");
-    } catch (SamlException ignore) {
-    }
-  }
-
-  /**
-   * Decode and validate saml logout request with valid signature.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutRequestWithValidSignature() throws Throwable {
-    var nameId = "gdeclerck";
-    // Retrieve the saml client
-    var client = getKeyCloakClient(true);
-    // Create a logout request
-    var encodedLogoutRequest = client.getLogoutRequest(nameId);
-    client.decodeAndValidateSamlLogoutRequest(encodedLogoutRequest, nameId, "POST");
-  }
-
-  /**
-   * Decode and validate saml logout valid response.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutValidResponse() throws Throwable {
-    // Retrieve the saml client
-    var client = getKeyCloakClient(false);
-    // Retrieve the new encoded logout response with valid status
-    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
-    assertTrue(logoutResponse.isValid());
-  }
-
-  @Test
-  public void decodeAndValidateDeflatedSamlLogoutValidResponse() throws Throwable {
-    var logoutResponse =
-        decodeAndValidateSamlLogoutResponse(A_DEFLATED_AND_ENCODED_LOGOUT_RESPONSE, "GET");
-    assertTrue(logoutResponse.isValid());
-  }
-
-  /**
-   * Decode and validate saml logout valid response with signature.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void decodeAndValidateSamlLogoutValidResponseWithSignature() throws Throwable {
-    // Retrieve the saml client
-    var client = getKeyCloakClient(true);
-    // Retrieve the new encoded logout response with valid status
-    var encodedLogoutResponse = client.getSamlLogoutResponse(StatusCode.SUCCESS);
-    var logoutResponse = decodeAndValidateSamlLogoutResponse(encodedLogoutResponse, "POST");
-    assertTrue(logoutResponse.isValid());
-  }
-
-  /**
-   * Gets saml logout request returns an encoded request.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void getSamlLogoutRequestReturnsAnEncodedRequest() throws Throwable {
-    var client = getKeyCloakClient(false);
-
-    var decoded =
-        new String(
-            Base64.decodeBase64(client.getLogoutRequest("mlaporte@coveo.com")),
-            StandardCharsets.UTF_8);
-    assertTrue(decoded.contains(">myidentifier<"));
-  }
-
-  /**
-   * Gets saml logout response returns an encoded response.
-   *
-   * @throws Throwable the throwable
-   */
-  @Test
-  public void getSamlLogoutResponseReturnsAnEncodedResponse() throws Throwable {
-    var client = getKeyCloakClient(false);
-
-    var decoded =
-        new String(
-            Base64.decodeBase64(client.getSamlLogoutResponse(StatusCode.SUCCESS, null)),
-            StandardCharsets.UTF_8);
-    assertTrue(decoded.contains(">myidentifier<"));
-    assertTrue(decoded.contains(StatusCode.SUCCESS));
-  }
-
   @Test
   public void getSamlClientFromMetadataSuccess() {
     var testMetadata =
@@ -560,13 +357,5 @@ public class SamlClientTest {
 
   private String encode(String decoded) {
     return Base64.encodeBase64String(decoded.getBytes(StandardCharsets.UTF_8));
-  }
-
-  private SamlLogoutResponse decodeAndValidateSamlLogoutResponse(
-      String encodedResponse, String method) throws IOException, SamlException {
-    var client = getKeyCloakClient(false);
-    var logoutResponse = client.decodeAndValidateSamlLogoutResponse(encodedResponse, method);
-    assertNotNull(logoutResponse);
-    return logoutResponse;
   }
 }

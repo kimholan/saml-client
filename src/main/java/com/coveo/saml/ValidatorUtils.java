@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import org.opensaml.saml.common.SignableSAMLObject;
 import org.opensaml.saml.saml2.core.Conditions;
-import org.opensaml.saml.saml2.core.LogoutRequest;
-import org.opensaml.saml.saml2.core.LogoutResponse;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.core.StatusCode;
@@ -216,39 +214,6 @@ class ValidatorUtils {
   }
 
   /**
-   * Validate.
-   *
-   * @param logoutRequest the response
-   * @param responseIssuer the response issuer
-   * @param credentials the credentials
-   * @throws SamlException the saml exception
-   */
-  public static void validate(
-      LogoutRequest logoutRequest,
-      String responseIssuer,
-      List<Credential> credentials,
-      String nameID)
-      throws SamlException {
-    validateLogoutRequest(logoutRequest, responseIssuer, nameID);
-    validateSignature(logoutRequest, credentials);
-  }
-
-  /**
-   * Validate.
-   *
-   * @param response the response
-   * @param responseIssuer the response issuer
-   * @param credentials the credentials
-   * @throws SamlException the saml exception
-   */
-  public static void validate(
-      LogoutResponse response, String responseIssuer, List<Credential> credentials)
-      throws SamlException {
-    validateResponse(response, responseIssuer);
-    validateSignature(response, credentials);
-  }
-
-  /**
    * Validate response.
    *
    * @param response the response
@@ -264,36 +229,5 @@ class ValidatorUtils {
     }
     validateIssuer(response, responseIssuer);
     validateStatus(response);
-  }
-
-  /**
-   * Validate response.
-   *
-   * @param request the request
-   * @param requestIssuer the response issuer
-   * @throws SamlException the saml exception
-   */
-  private static void validateLogoutRequest(
-      LogoutRequest request, String requestIssuer, String nameID) throws SamlException {
-    try {
-      new LogoutRequestSchemaValidator().validate(request);
-    } catch (SamlException ex) {
-      throw new SamlException("The request schema validation failed", ex);
-    }
-    validateIssuer(request, requestIssuer);
-    validateNameId(request, nameID);
-  }
-
-  /**
-   * Validate the logout request name id.
-   *
-   * @param request the request
-   * @param nameID the name id
-   * @throws SamlException the saml exception
-   */
-  private static void validateNameId(LogoutRequest request, String nameID) throws SamlException {
-    if (nameID == null || !nameID.equals(request.getNameID().getValue())) {
-      throw new SamlException("The nameID of the logout request is incorrect");
-    }
   }
 }
